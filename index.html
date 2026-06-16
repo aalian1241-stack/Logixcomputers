@@ -3,152 +3,728 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LapTrack // Laptop Business Manager</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>LapTrack Studio - System Architecture & Live UI Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .google-font {
+            font-family: 'Product Sans', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f3f4;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dadce0;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #bdc1c6;
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased">
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
-    <div class="flex h-screen overflow-hidden">
-        
-        <aside class="w-64 bg-gray-800 border-r border-gray-700 hidden md:block flex-shrink-0">
-            <div class="p-6">
-                <h1 class="text-xl font-bold tracking-wider text-indigo-400">LAPTRACK Pro</h1>
-                <p class="text-xs text-gray-400">Multi-Device Sync Enabled</p>
+    <div id="auth-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md border border-gray-200 rounded-lg p-8 md:p-10 bg-white shadow-sm flex flex-col items-center">
+            <div class="flex items-center space-x-2 mb-2">
+                <span class="text-2xl font-medium google-font tracking-tight">
+                    <span class="text-blue-600">L</span><span class="text-red-500">a</span><span class="text-yellow-500">p</span><span class="text-blue-600">T</span><span class="text-green-500">r</span><span class="text-red-500">a</span><span class="text-blue-600">c</span><span class="text-green-500">k</span>
+                </span>
             </div>
-            <nav class="px-4 space-y-2">
-                <a href="#dashboard" class="flex items-center p-3 text-sm font-medium rounded-lg bg-indigo-600 text-white">Dashboard</a>
-                <a href="#inventory" class="flex items-center p-3 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700">Inventory Management</a>
-                <a href="#purchases" class="flex items-center p-3 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700">Purchase Logs</a>
-                <a href="#sales" class="flex items-center p-3 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700">Sales & Invoicing</a>
+            <h2 class="text-2xl font-normal text-gray-900 google-font mb-1 text-center" id="auth-title">Sign in</h2>
+            <p class="text-sm text-gray-600 mb-8 text-center">Use your Laptop Business Management Account</p>
+            
+            <form id="login-form" class="w-full space-y-5" onsubmit="handleAuth(event)">
+                <div class="relative w-full">
+                    <input type="text" id="auth-username" required class="w-full px-3 py-3 text-base border border-gray-300 rounded focus:border-blue-600 focus:outline-none transition-colors peer placeholder-transparent" placeholder="Username">
+                    <label for="auth-username" class="absolute left-3 top-3 text-gray-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-3 peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-blue-600 peer-focus:bg-white peer-focus:px-1 rounded bg-white">Username or Email</label>
+                </div>
+                
+                <div class="relative w-full">
+                    <input type="password" id="auth-password" required class="w-full px-3 py-3 text-base border border-gray-300 rounded focus:border-blue-600 focus:outline-none transition-colors peer placeholder-transparent" placeholder="Password">
+                    <label for="auth-password" class="absolute left-3 top-3 text-gray-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-3 peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-blue-600 peer-focus:bg-white peer-focus:px-1 rounded bg-white">Enter password</label>
+                </div>
+
+                <div class="relative w-full" id="shop-name-container" style="display: none;">
+                    <input type="text" id="auth-shopname" class="w-full px-3 py-3 text-base border border-gray-300 rounded focus:border-blue-600 focus:outline-none transition-colors peer placeholder-transparent" placeholder="Shop Name">
+                    <label for="auth-shopname" class="absolute left-3 top-3 text-gray-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-3 peer-focus:top-[-10px] peer-focus:text-xs peer-focus:text-blue-600 peer-focus:bg-white peer-focus:px-1 rounded bg-white">Shop Name</label>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">Create account</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded shadow-sm text-sm transition-colors tracking-wide">Next</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-workspace" class="flex-1 flex flex-col md:flex-row h-screen overflow-hidden opacity-0 transition-opacity duration-300">
+        
+        <aside class="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="shop-logo-display" class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center shadow-inner tracking-wider text-sm overflow-hidden uppercase">KLE</div>
+                    <div>
+                        <h2 id="shop-title-display" class="font-medium text-sm text-gray-900 truncate max-w-[140px] google-font">Karachi Laptop Emporium</h2>
+                        <span class="text-xs text-green-600 font-medium flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1"></span> Cloud Sync Live</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="p-1.5 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" title="Sign Out">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                </button>
+            </div>
+            
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
+                <button onclick="switchTab('dashboard-view')" id="nav-dashboard-view" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-full text-sm font-medium transition-colors bg-blue-50 text-blue-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>
+                    <span>Google Workspace Panel</span>
+                </button>
+                <button onclick="switchTab('inventory-view')" id="nav-inventory-view" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <span>Inventory Database</span>
+                </button>
+                <button onclick="switchTab('purchases-view')" id="nav-purchases-view" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    <span>Purchase Invoices</span>
+                </button>
+                <button onclick="switchTab('sales-view')" id="nav-sales-view" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Sales Dispatch Logs</span>
+                </button>
+                <button onclick="switchTab('settings-view')" id="nav-settings-view" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Shop Customization</span>
+                </button>
             </nav>
         </aside>
 
-        <main class="flex-1 flex flex-col overflow-y-auto bg-gray-900">
+        <main class="flex-1 flex flex-col min-w-0 bg-[#f8f9fa] overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
             
-            <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center md:justify-end">
-                <button class="md:hidden text-gray-300 focus:outline-none">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <div class="flex items-center space-y-0 space-x-4">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span> Supabase Connected
-                    </span>
-                    <div class="text-sm font-medium text-gray-300">Admin Panel</div>
+            <div id="dashboard-view" class="tab-view space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Available Stock Devices</span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="dashboard-total-stock" class="text-3xl font-normal text-gray-900 google-font">0</span>
+                            <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-medium">Laptops</span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Purchase Capital</span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="dashboard-total-purchases" class="text-3xl font-normal text-gray-900 google-font">PKR 0</span>
+                            <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-medium">Debit</span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Revenue Dispatched</span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="dashboard-total-sales" class="text-3xl font-normal text-gray-900 google-font">PKR 0</span>
+                            <span class="text-xs text-emerald-600 bg-green-50 px-2 py-0.5 rounded font-medium">Credit</span>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Net Business Yield</span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="dashboard-net-profit" class="text-3xl font-normal text-gray-900 google-font">PKR 0</span>
+                            <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-medium">Profit</span>
+                        </div>
+                    </div>
                 </div>
-            </header>
 
-            <div class="p-4 max-w-7xl w-full mx-auto space-y-8">
-                
-                <section id="dashboard" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="p-6 bg-gray-800 rounded-xl border border-gray-700">
-                        <p class="text-sm font-medium text-gray-400 truncate">Total Active Stock</p>
-                        <p class="mt-2 text-3xl font-semibold text-white" id="stat-stock">0</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h3 class="text-base font-medium text-gray-900 mb-4 google-font">High Priority Stock Available</h3>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-gray-50 text-gray-600 text-xs font-medium border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-3 py-2">Device Specification</th>
+                                        <th class="px-3 py-2">Serial Number</th>
+                                        <th class="px-3 py-2 text-right">Cost Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-stock-table" class="divide-y divide-gray-100 text-gray-700">
+                                    </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="p-6 bg-gray-800 rounded-xl border border-gray-700">
-                        <p class="text-sm font-medium text-gray-400 truncate">Monthly Purchases</p>
-                        <p class="mt-2 text-3xl font-semibold text-amber-400" id="stat-purchases">$0.00</p>
-                    </div>
-                    <div class="p-6 bg-gray-800 rounded-xl border border-gray-700">
-                        <p class="text-sm font-medium text-gray-400 truncate">Monthly Sales</p>
-                        <p class="mt-2 text-3xl font-semibold text-emerald-400" id="stat-sales">$0.00</p>
-                    </div>
-                    <div class="p-6 bg-gray-800 rounded-xl border border-gray-700">
-                        <p class="text-sm font-medium text-gray-400 truncate">Net Profit Margin</p>
-                        <p class="mt-2 text-3xl font-semibold text-indigo-400" id="stat-profit">$0.00</p>
-                    </div>
-                </section>
 
-                <section id="purchases" class="bg-gray-800 rounded-xl border border-gray-700 p-6">
-                    <h2 class="text-lg font-medium text-white mb-4">Log New Laptop Purchase (Stock In)</h2>
-                    <form id="purchase-form" class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-300">Brand</label>
-                            <input type="text" id="p-brand" placeholder="e.g., Apple, Dell" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h3 class="text-base font-medium text-gray-900 mb-4 google-font">Real-Time Business Velocity Monitor</h3>
+                        <div class="h-48 w-full border border-gray-100 rounded bg-gray-50 flex flex-col justify-between p-4 relative">
+                            <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-gray-200"></div>
+                            <div class="flex h-full items-end justify-around space-x-2 pt-4">
+                                <div class="w-12 bg-amber-400 rounded-t transition-all duration-500 relative group" id="graph-bar-purchase" style="height: 10%;">
+                                    <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Purchase</div>
+                                </div>
+                                <div class="w-12 bg-emerald-500 rounded-t transition-all duration-500 relative group" id="graph-bar-sales" style="height: 10%;">
+                                    <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Sales</div>
+                                </div>
+                                <div class="w-12 bg-indigo-500 rounded-t transition-all duration-500 relative group" id="graph-bar-profit" style="height: 10%;">
+                                    <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Net Profit</div>
+                                </div>
+                            </div>
+                            <div class="flex justify-around text-xs font-medium text-gray-500 pt-2 border-t border-gray-200">
+                                <span>Purchases Capital</span>
+                                <span>Sales Dispatched</span>
+                                <span>Net Retained Margin</span>
+                            </div>
                         </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-300">Model & Specs</label>
-                            <input type="text" id="p-model" placeholder="M3 Pro 16GB, XPS 15" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
-                        </div>
-                        <div class="sm:col-span-1">
-                            <label class="block text-sm font-medium text-gray-300">Cost Price ($)</label>
-                            <input type="number" id="p-cost" placeholder="850" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
-                        </div>
-                        <div class="sm:col-span-1 flex items-end">
-                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition">
-                                Add Stock
-                            </button>
-                        </div>
-                    </form>
-                </section>
+                    </div>
+                </div>
+            </div>
 
-                <section id="inventory" class="bg-gray-800 rounded-xl border border-gray-700 p-6">
-                    <div class="sm:flex sm:items-center justify-between mb-4">
-                        <h2 class="text-lg font-medium text-white">Current Live Inventory</h2>
-                        <span class="text-xs text-gray-400">Updates in real-time across all devices</span>
+            <div id="inventory-view" class="tab-view hidden space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h3 class="text-base font-medium text-gray-900 google-font">Consolidated Central Inventory</h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500 font-medium">Filter Status:</span>
+                            <select id="inventory-filter" onchange="renderInventoryTable()" class="border border-gray-300 rounded text-xs px-2.5 py-1.5 bg-white focus:outline-none focus:border-blue-500">
+                                <option value="ALL">Show All Architecture</option>
+                                <option value="AVAILABLE">Available Only</option>
+                                <option value="SOLD">Sold Units Dispatched</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="overflow-x-auto separation-border">
-                        <table class="min-w-full divide-y divide-gray-700">
-                            <thead class="bg-gray-700">
+                    <div class="overflow-x-auto custom-scrollbar border border-gray-200 rounded">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-600 text-xs font-medium border-b border-gray-200">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Device</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Specs</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Cost</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase">Action</th>
+                                    <th class="px-4 py-3">Device Identity</th>
+                                    <th class="px-4 py-3">Specs Matrix</th>
+                                    <th class="px-4 py-3">Serial/Asset Tag</th>
+                                    <th class="px-4 py-3 text-right">Inward Cost (PKR)</th>
+                                    <th class="px-4 py-3 text-center">State Condition</th>
+                                    <th class="px-4 py-3 text-center">Commercial Status</th>
+                                    <th class="px-4 py-3 text-right">Action Vector</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventory-table-body" class="divide-y divide-gray-700 bg-gray-800">
-                                <tr>
-                                    <td class="px-6 py-4 text-sm font-medium text-white">MacBook Pro 14"</td>
-                                    <td class="px-6 py-4 text-sm text-gray-300">M2, 512GB SSD</td>
-                                    <td class="px-6 py-4 text-sm text-gray-300">$1,200</td>
-                                    <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded bg-green-900 text-green-200">Available</span></td>
-                                    <td class="px-6 py-4 text-right text-sm">
-                                        <button onclick="openSaleModal(1)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-xs transition">Sell Item</button>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody id="inventory-master-table" class="divide-y divide-gray-100 text-gray-700 bg-white">
+                                </tbody>
                         </table>
                     </div>
-                </section>
-
+                </div>
             </div>
+
+            <div id="purchases-view" class="tab-view hidden space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-base font-medium text-gray-900 mb-4 google-font">Inward Procurement Intake Matrix</h3>
+                    <form id="purchase-entry-form" onsubmit="executePurchaseRegistration(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Laptop Brand / Maker</label>
+                            <input type="text" id="pur-brand" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. Dell, Apple, HP">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Model & Configuration</label>
+                            <input type="text" id="pur-model" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. Core i5 11th Gen 16GB">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Serial Identifier Tag</label>
+                            <input type="text" id="pur-serial" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. SN-9827361">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Procurement Cost Price (PKR)</label>
+                            <input type="number" id="pur-cost" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. 65000">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Refurbishment Condition Assessment</label>
+                            <select id="pur-condition" class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white">
+                                <option value="Flawless / Pristine">Flawless / Pristine Stock</option>
+                                <option value="Minor Refurbishment Required">Minor Refurbishment Required</option>
+                                <option value="Major Hardware Repair Needed">Major Hardware Repair Needed</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-3 flex items-end">
+                            <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-6 py-2 rounded shadow-sm transition-colors tracking-wide">Commit Asset to Database</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-base font-medium text-gray-900 mb-4 google-font">Inward Procurement History</h3>
+                    <div class="overflow-x-auto custom-scrollbar border border-gray-200 rounded">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-600 text-xs font-medium border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3">Timestamp</th>
+                                    <th class="px-4 py-3">Asset Classification</th>
+                                    <th class="px-4 py-3">Serial Reference</th>
+                                    <th class="px-4 py-3 text-right">Debit Outflow (PKR)</th>
+                                    <th class="px-4 py-3 text-center">Initial Condition</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchase-history-table" class="divide-y divide-gray-100 text-gray-700 bg-white">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sales-view" class="tab-view hidden space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-base font-medium text-gray-900 mb-4 google-font">Commercial Outbound Sales Ledger</h3>
+                    <div class="overflow-x-auto custom-scrollbar border border-gray-200 rounded">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-600 text-xs font-medium border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3">Transaction Date</th>
+                                    <th class="px-4 py-3">Device Details</th>
+                                    <th class="px-4 py-3">Serial ID Reference</th>
+                                    <th class="px-4 py-3">Acquiring Customer Entity</th>
+                                    <th class="px-4 py-3 text-right">Base Cost (PKR)</th>
+                                    <th class="px-4 py-3 text-right">Dispatched Revenue (PKR)</th>
+                                    <th class="px-4 py-3 text-right">Net Profit Yield (PKR)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-master-table" class="divide-y divide-gray-100 text-gray-700 bg-white">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings-view" class="tab-view hidden space-y-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm max-w-2xl">
+                    <h3 class="text-base font-medium text-gray-900 mb-4 google-font">Business Entity Configuration Parameter</h3>
+                    <form id="shop-settings-form" onsubmit="updateShopProfile(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Corporate / Shop Identity Title Name</label>
+                            <input type="text" id="set-shop-name" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. Karachi Laptop Center Pro">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Short Initials (Dynamic Logo Variant)</label>
+                            <input type="text" id="set-shop-logo" maxlength="3" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. KLC">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-6 py-2 rounded shadow-sm transition-colors tracking-wide">Update Operational Identity Parameters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </main>
     </div>
 
-    <div id="sale-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-md w-full p-6 space-y-4">
-            <h3 class="text-lg font-medium text-white">Process Laptop Sale</h3>
-            <form id="sale-form" class="space-y-4">
-                <input type="hidden" id="sale-laptop-id">
+    <div id="sale-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg border border-gray-200 max-w-md w-full p-6 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 class="text-lg font-medium text-gray-900 google-font" id="modal-device-title">Process Laptop Outflow</h3>
+                <button onclick="closeSaleModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <form id="execution-sale-form" onsubmit="submitSaleTransaction(event)" class="space-y-4">
+                <input type="hidden" id="modal-laptop-id">
+                <input type="hidden" id="modal-laptop-cost">
+                
                 <div>
-                    <label class="block text-sm font-medium text-gray-300">Final Sale Price ($)</label>
-                    <input type="number" id="sale-price" required class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Acquiring Customer Entity / Client Name</label>
+                    <input type="text" id="modal-customer-name" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. Muhammad Ali Shah">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-300">Customer Name</label>
-                    <input type="text" id="sale-customer" required class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Final Agreed Settlement Price Value (PKR)</label>
+                    <input type="number" id="modal-sale-price" required class="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-white" placeholder="e.g. 75000">
                 </div>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeSaleModal()" class="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">Cancel</button>
-                    <button type="submit" class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-md">Confirm Sale & Invoice</button>
+                
+                <div class="bg-gray-50 p-3 rounded text-xs text-gray-600 space-y-1">
+                    <div class="flex justify-between"><span>Base Procurement Debit:</span><span id="modal-txt-cost" class="font-medium text-gray-900">PKR 0</span></div>
+                    <div class="flex justify-between border-t border-gray-200 pt-1 mt-1 font-semibold text-blue-600"><span>Expected Yield Analysis:</span><span id="modal-txt-yield">PKR 0</span></div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                    <button type="button" onclick="closeSaleModal()" class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors">Abort Dispatch</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition-colors">Commit Dispatch</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Placeholder JavaScript for modal toggles 
-        function openSaleModal(id) {
-            document.getElementById('sale-laptop-id').value = id;
-            document.getElementById('sale-modal').classList.remove('hidden');
-            document.getElementById('sale-modal').classList.add('flex');
+        // Global Reactive Data State (Supabase Architecture Replica Structure)
+        let databaseState = {
+            shopIdentity: { name: "Karachi Laptop Emporium", logo: "KLE" },
+            inventoryUnits: [],
+            procurementInvoices: [],
+            dispatchedSalesLogs: []
+        };
+
+        let currentAuthMode = "LOGIN";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromMemory();
+            initializeUIBindings();
+            calculateAnalyticalMetricsEngine();
+        });
+
+        function loadStateFromMemory() {
+            const memoryDump = localStorage.getItem('LAPTRACK_ENGINE_STATE');
+            if(memoryDump) {
+                try {
+                    databaseState = JSON.parse(memoryDump);
+                } catch(e) {
+                    console.error("Local state matrix integrity validation failed.", e);
+                }
+            }
+            // Bind settings profile dynamically
+            document.getElementById('shop-title-display').innerText = databaseState.shopIdentity.name;
+            document.getElementById('shop-logo-display').innerText = databaseState.shopIdentity.logo;
+            document.getElementById('set-shop-name').value = databaseState.shopIdentity.name;
+            document.getElementById('set-shop-logo').value = databaseState.shopIdentity.logo;
         }
+
+        function commitStateToMemory() {
+            localStorage.setItem('LAPTRACK_ENGINE_STATE', JSON.stringify(databaseState));
+            calculateAnalyticalMetricsEngine();
+        }
+
+        function toggleAuthMode() {
+            const title = document.getElementById('auth-title');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            const shopContainer = document.getElementById('shop-name-container');
+            
+            if(currentAuthMode === "LOGIN") {
+                currentAuthMode = "REGISTER";
+                title.innerText = "Create your account";
+                toggleBtn.innerText = "Sign in instead";
+                shopContainer.style.display = "block";
+            } else {
+                currentAuthMode = "LOGIN";
+                title.innerText = "Sign in";
+                toggleBtn.innerText = "Create account";
+                shopContainer.style.display = "none";
+            }
+        }
+
+        function handleAuth(event) {
+            event.preventDefault();
+            if(currentAuthMode === "REGISTER") {
+                const configuredShop = document.getElementById('auth-shopname').value.trim();
+                if(configuredShop) {
+                    databaseState.shopIdentity.name = configuredShop;
+                    databaseState.shopIdentity.logo = configuredShop.substring(0, 3).toUpperCase();
+                    document.getElementById('shop-title-display').innerText = databaseState.shopIdentity.name;
+                    document.getElementById('shop-logo-display').innerText = databaseState.shopIdentity.logo;
+                }
+            }
+            
+            // Seamless Interface Transitions (Sign In Logic bypass)
+            document.getElementById('auth-screen').style.display = 'none';
+            const workspace = document.getElementById('app-workspace');
+            workspace.style.opacity = '1';
+            
+            renderAllViewports();
+            commitStateToMemory();
+        }
+
+        function logout() {
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('app-workspace').style.opacity = '0';
+        }
+
+        function switchTab(targetTabId) {
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(targetTabId).classList.remove('hidden');
+            
+            ['nav-dashboard-view', 'nav-inventory-view', 'nav-purchases-view', 'nav-sales-view', 'nav-settings-view'].forEach(id => {
+                const element = document.getElementById(id);
+                if(element) {
+                    element.classList.remove('bg-blue-50', 'text-blue-700');
+                    element.classList.add('text-gray-600', 'hover:bg-gray-100');
+                }
+            });
+            
+            const activeNav = document.getElementById('nav-' + targetTabId);
+            if(activeNav) {
+                activeNav.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                activeNav.classList.add('bg-blue-50', 'text-blue-700');
+            }
+            
+            renderAllViewports();
+        }
+
+        function renderAllViewports() {
+            renderDashboardTables();
+            renderInventoryTable();
+            renderPurchaseHistoryTable();
+            renderSalesHistoryTable();
+        }
+
+        function calculateAnalyticalMetricsEngine() {
+            let activeStockCount = 0;
+            let totalProcurementDebit = 0;
+            let totalSalesCredit = 0;
+            let netProfitYield = 0;
+
+            databaseState.inventoryUnits.forEach(item => {
+                if(item.status === "AVAILABLE") activeStockCount++;
+            });
+
+            databaseState.procurementInvoices.forEach(invoice => {
+                totalProcurementDebit += Number(invoice.cost);
+            });
+
+            databaseState.dispatchedSalesLogs.forEach(sale => {
+                totalSalesCredit += Number(sale.revenue);
+                netProfitYield += Number(sale.profit);
+            });
+
+            document.getElementById('dashboard-total-stock').innerText = activeStockCount;
+            document.getElementById('dashboard-total-purchases').innerText = "PKR " + totalProcurementDebit.toLocaleString('en-PK');
+            document.getElementById('dashboard-total-sales').innerText = "PKR " + totalSalesCredit.toLocaleString('en-PK');
+            document.getElementById('dashboard-net-profit').innerText = "PKR " + netProfitYield.toLocaleString('en-PK');
+
+            // Synchronize Graph Elements Dynamically
+            const highPointValue = Math.max(totalProcurementDebit, totalSalesCredit, netProfitYield, 1);
+            document.getElementById('graph-bar-purchase').style.height = `${(totalProcurementDebit / highPointValue) * 100}%`;
+            document.getElementById('graph-bar-sales').style.height = `${(totalSalesCredit / highPointValue) * 100}%`;
+            document.getElementById('graph-bar-profit').style.height = `${(netProfitYield / highPointValue) * 100}%`;
+        }
+
+        function executePurchaseRegistration(event) {
+            event.preventDefault();
+            const brand = document.getElementById('pur-brand').value.trim();
+            const model = document.getElementById('pur-model').value.trim();
+            const serial = document.getElementById('pur-serial').value.trim();
+            const cost = document.getElementById('pur-cost').value.trim();
+            const condition = document.getElementById('pur-condition').value;
+            const uniqueId = 'ASSET-' + Date.now();
+            const timestamp = new Date().toLocaleString('en-PK');
+
+            const assetItem = {
+                id: uniqueId,
+                title: brand + ' ' + model,
+                serial: serial,
+                cost: Number(cost),
+                condition: condition,
+                status: "AVAILABLE",
+                timestamp: timestamp
+            };
+
+            const invoiceRecord = {
+                timestamp: timestamp,
+                assetTitle: brand + ' ' + model,
+                serial: serial,
+                cost: Number(cost),
+                condition: condition
+            };
+
+            databaseState.inventoryUnits.unshift(assetItem);
+            databaseState.procurementInvoices.unshift(invoiceRecord);
+
+            document.getElementById('purchase-entry-form').reset();
+            
+            commitStateToMemory();
+            renderAllViewports();
+        }
+
+        function renderDashboardTables() {
+            const container = document.getElementById('dashboard-stock-table');
+            container.innerHTML = '';
+            
+            const targetedStock = databaseState.inventoryUnits.filter(item => item.status === "AVAILABLE").slice(0, 5);
+            
+            if(targetedStock.length === 0) {
+                container.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-xs text-gray-400">No active laptop stock located inside system parameters.</td></tr>`;
+                return;
+            }
+
+            targetedStock.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-3 py-2.5 font-medium text-gray-900">${item.title}</td>
+                    <td class="px-3 py-2.5 font-mono text-xs text-gray-500">${item.serial}</td>
+                    <td class="px-3 py-2.5 text-right font-medium text-gray-900">PKR ${item.cost.toLocaleString('en-PK')}</td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function renderInventoryTable() {
+            const container = document.getElementById('inventory-master-table');
+            container.innerHTML = '';
+            const filterValue = document.getElementById('inventory-filter').value;
+
+            const structuredSet = databaseState.inventoryUnits.filter(item => {
+                if(filterValue === "ALL") return true;
+                return item.status === filterValue;
+            });
+
+            if(structuredSet.length === 0) {
+                container.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">Inventory ledger is completely empty.</td></tr>`;
+                return;
+            }
+
+            structuredSet.forEach(item => {
+                const isAvailable = item.status === "AVAILABLE";
+                const badgeColor = isAvailable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-300';
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-4 py-3.5 font-medium text-gray-900">${item.title}</td>
+                    <td class="px-4 py-3.5 text-xs text-gray-600">${item.condition}</td>
+                    <td class="px-4 py-3.5 font-mono text-xs text-gray-500">${item.serial}</td>
+                    <td class="px-4 py-3.5 text-right font-medium">PKR ${item.cost.toLocaleString('en-PK')}</td>
+                    <td class="px-4 py-3.5 text-center text-xs text-gray-500">${item.condition}</td>
+                    <td class="px-4 py-3.5 text-center">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeColor}">${item.status}</span>
+                    </td>
+                    <td class="px-4 py-3.5 text-right">
+                        ${isAvailable ? 
+                          `<button onclick="openSaleModal('${item.id}', '${item.title}', ${item.cost})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors shadow-sm">Dispatch</button>` : 
+                          `<span class="text-xs font-medium text-gray-400">Processed</span>`
+                        }
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function renderPurchaseHistoryTable() {
+            const container = document.getElementById('purchase-history-table');
+            container.innerHTML = '';
+
+            if(databaseState.procurementInvoices.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">No inward logs written inside data architecture.</td></tr>`;
+                return;
+            }
+
+            databaseState.procurementInvoices.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">${record.timestamp}</td>
+                    <td class="px-4 py-3.5 font-medium text-gray-900">${record.assetTitle}</td>
+                    <td class="px-4 py-3.5 font-mono text-xs text-gray-500">${record.serial}</td>
+                    <td class="px-4 py-3.5 text-right font-medium text-gray-900">PKR ${record.cost.toLocaleString('en-PK')}</td>
+                    <td class="px-4 py-3.5 text-center text-xs text-gray-600">${record.condition}</td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function renderSalesHistoryTable() {
+            const container = document.getElementById('sales-master-table');
+            container.innerHTML = '';
+
+            if(databaseState.dispatchedSalesLogs.length === 0) {
+                container.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">No outbound sale data detected inside ledger modules.</td></tr>`;
+                return;
+            }
+
+            databaseState.dispatchedSalesLogs.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">${record.timestamp}</td>
+                    <td class="px-4 py-3.5 font-medium text-gray-900">${record.assetTitle}</td>
+                    <td class="px-4 py-3.5 font-mono text-xs text-gray-500">${record.serial}</td>
+                    <td class="px-4 py-3.5 text-gray-700 text-sm">${record.customer}</td>
+                    <td class="px-4 py-3.5 text-right text-xs text-gray-500">PKR ${record.cost.toLocaleString('en-PK')}</td>
+                    <td class="px-4 py-3.5 text-right font-medium text-emerald-600">PKR ${record.revenue.toLocaleString('en-PK')}</td>
+                    <td class="px-4 py-3.5 text-right font-semibold text-indigo-600">PKR ${record.profit.toLocaleString('en-PK')}</td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function initializeUIBindings() {
+            const priceInput = document.getElementById('modal-sale-price');
+            if(priceInput) {
+                priceInput.addEventListener('input', () => {
+                    const cost = Number(document.getElementById('modal-laptop-cost').value || 0);
+                    const salePrice = Number(priceInput.value || 0);
+                    const deltaYield = salePrice - cost;
+                    
+                    const yieldText = document.getElementById('modal-txt-yield');
+                    yieldText.innerText = "PKR " + deltaYield.toLocaleString('en-PK');
+                    
+                    if(deltaYield < 0) {
+                        yieldText.className = "font-semibold text-red-500";
+                    } else {
+                        yieldText.className = "font-semibold text-indigo-600";
+                    }
+                });
+            }
+        }
+
+        function openSaleModal(id, title, cost) {
+            document.getElementById('modal-laptop-id').value = id;
+            document.getElementById('modal-laptop-cost').value = cost;
+            document.getElementById('modal-device-title').innerText = 'Dispatch: ' + title;
+            document.getElementById('modal-txt-cost').innerText = 'PKR ' + cost.toLocaleString('en-PK');
+            document.getElementById('modal-txt-yield').innerText = 'PKR 0';
+            document.getElementById('modal-txt-yield').className = "font-semibold text-gray-900";
+            document.getElementById('execution-sale-form').reset();
+            
+            const modal = document.getElementById('sale-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
         function closeSaleModal() {
-            document.getElementById('sale-modal').classList.add('hidden');
-            document.getElementById('sale-modal').classList.remove('flex');
+            const modal = document.getElementById('sale-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitSaleTransaction(event) {
+            event.preventDefault();
+            const id = document.getElementById('modal-laptop-id').value;
+            const cost = Number(document.getElementById('modal-laptop-cost').value);
+            const customer = document.getElementById('modal-customer-name').value.trim();
+            const salePrice = Number(document.getElementById('modal-sale-price').value);
+            const profitDelta = salePrice - cost;
+            const timestamp = new Date().toLocaleString('en-PK');
+
+            const index = databaseState.inventoryUnits.findIndex(item => item.id === id);
+            if(index !== -1) {
+                databaseState.inventoryUnits[index].status = "SOLD";
+                
+                const saleRecord = {
+                    timestamp: timestamp,
+                    assetTitle: databaseState.inventoryUnits[index].title,
+                    serial: databaseState.inventoryUnits[index].serial,
+                    customer: customer,
+                    cost: cost,
+                    revenue: salePrice,
+                    profit: profitDelta
+                };
+
+                databaseState.dispatchedSalesLogs.unshift(saleRecord);
+                closeSaleModal();
+                commitStateToMemory();
+                renderAllViewports();
+            }
+        }
+
+        function updateShopProfile(event) {
+            event.preventDefault();
+            const newName = document.getElementById('set-shop-name').value.trim();
+            const newLogo = document.getElementById('set-shop-logo').value.trim().toUpperCase();
+
+            if(newName && newLogo) {
+                databaseState.shopIdentity.name = newName;
+                databaseState.shopIdentity.logo = newLogo;
+                
+                document.getElementById('shop-title-display').innerText = newName;
+                document.getElementById('shop-logo-display').innerText = newLogo;
+                
+                alert("Shop metadata parameters synchronized.");
+                commitStateToMemory();
+            }
         }
     </script>
 </body>
