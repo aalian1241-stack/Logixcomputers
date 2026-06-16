@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lapify Hub - Connected Cloud Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@500;700&family=Roboto+Mono:wght@500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
+            --md-surface: #ffffff;
+            --md-surface-variant: #f1f3f4;
+            
+            --color-primary: #6200ee;
+            --color-secondary: #00e5ff;
+            --color-success: #00e676;
+            --color-danger: #ff3d00;
+            --color-warning: #ffea00;
+            --color-supabase: #3ecf8e;
+            
+            --gradient-premium: linear-gradient(-45deg, #6200ee, #00e5ff, #3ecf8e, #ff3d00);
+            
+            --md-text-main: #1c1b1f;
+            --md-text-muted: #49454f;
+            --md-border: rgba(196, 199, 197, 0.5);
+            
+            --radius-sm: 12px;
+            --radius-md: 20px;
+            --radius-lg: 32px;
+            
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--md-text-main);
+            font-family: 'Roboto', sans-serif;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--md-border);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .app-brand h1 {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-supabase));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .app-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            padding-bottom: calc(100px + var(--safe-bottom));
+            max-width: 840px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .view-panel {
+            display: none;
+            will-change: opacity, transform;
+        }
+
+        .view-panel.active {
+            display: block;
+            animation: mobileSpringUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes mobileSpringUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--md-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem 0.25rem calc(0.5rem + var(--safe-bottom)) 0.25rem;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+        }
+
+        .nav-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            color: var(--md-text-muted);
+            font-size: 0.7rem;
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            width: 25%;
+            padding: 0.25rem 0;
+            transition: color 0.2s ease;
+        }
+
+        .nav-tab .icon-pill {
+            padding: 4px 18px;
+            border-radius: var(--radius-md);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-tab svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: var(--md-text-muted);
+            stroke-width: 2;
+        }
+
+        .nav-tab.active { color: var(--color-primary); font-weight: 700; }
+        .nav-tab.active .icon-pill { background: rgba(98, 0, 238, 0.08); }
+        .nav-tab.active svg { stroke: var(--color-primary); }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .kpi-card {
+            background: var(--md-surface);
+            padding: 1rem 0.75rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--md-border);
+            position: relative;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--md-border);
+        }
+        
+        .kpi-card.active-kpi::before { background: var(--color-primary); }
+        #card-kpi-rev.active-kpi::before { background: var(--color-success); }
+        #card-kpi-stk.active-kpi::before { background: var(--color-supabase); }
+
+        .kpi-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--md-text-muted); letter-spacing: 0.5px;}
+        .kpi-value { font-family: 'Google Sans', sans-serif; font-size: 1rem; font-weight: 700; margin-top: 0.25rem; display: block; color: var(--md-text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .canvas-card {
+            background: var(--md-surface);
+            border: 1px solid var(--md-border);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        canvas {
+            background: #fafbfe;
+            border-radius: var(--radius-sm);
+            width: 100%;
+            max-height: 70px;
+            display: block;
+        }
+
+        .explainer-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            font-size: 0.75rem;
+            color: var(--md-text-muted);
+            font-weight: 500;
+        }
+        
+        .explainer-banner svg { width: 16px; height: 16px; stroke: var(--color-primary); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+        .section-header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title { font-family: 'Google Sans', sans-serif; font-size: 1rem; color: var(--md-text-main); font-weight: 700; }
+        .data-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        
+        .data-card {
+            background: var(--md-surface);
+            border: 1px solid var(--md-border);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-details h4 { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.2rem; color: var(--md-text-main); }
+        .card-details p { font-size: 0.8rem; color: var(--md-text-muted); }
+
+        .bottom-sheet {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(28, 27, 31, 0.4);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+        }
+
+        .bottom-sheet.open { display: flex; }
+        
+        .sheet-content {
+            background: var(--md-surface);
+            width: 100%;
+            border-top-left-radius: var(--radius-lg);
+            border-top-right-radius: var(--radius-lg);
+            padding: 1.5rem 1.25rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--md-text-muted); }
+
+        input, select {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-surface-variant);
+            border: 2px solid transparent;
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-sm);
+            color: var(--md-text-main);
+            font-size: 0.95rem;
+            outline: none;
+            width: 100%;
+            -webkit-appearance: none;
+            user-select: text !important;
+        }
+
+        input:focus, select:focus { background: var(--md-surface); border-color: var(--color-primary); }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--md-border);
+            padding: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn {
+            background: var(--color-primary);
+            color: #ffffff;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            border-radius: var(--radius-lg);
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        
+        .btn-secondary { background: var(--md-surface-variant); color: var(--md-text-main); border: 1px solid var(--md-border); }
+        .btn-outline { background: transparent; border: 2px solid var(--color-primary); color: var(--color-primary); }
+        .btn-text { background: transparent; color: var(--color-primary); width: auto; padding: 0.4rem; }
+        .btn-supabase { background: var(--color-supabase); color: #ffffff; }
+
+        .pill { padding: 0.3rem 0.6rem; border-radius: 8px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 0.25rem; }
+        .pill-danger { background: rgba(255, 61, 0, 0.1); color: var(--color-danger); }
+        .pill-success { background: rgba(0, 230, 118, 0.1); color: #00c853; }
+        .pill-warning { background: rgba(255, 234, 0, 0.15); color: #9c8200; }
+        .pill-supabase { background: rgba(62, 207, 142, 0.15); color: var(--color-supabase); }
+
+        .checkout-summary-card {
+            background: #1c1b1f;
+            color: #ffffff;
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .summary-row { display: flex; justify-content: space-between; font-size: 0.85rem; opacity: 0.9; }
+
+        .fab {
+            position: fixed;
+            bottom: calc(85px + var(--safe-bottom));
+            right: 1rem;
+            background: var(--gradient-premium);
+            background-size: 200% 200%;
+            color: #ffffff;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 85;
+            box-shadow: 0 4px 10px rgba(98, 0, 238, 0.3);
+        }
+        
+        .fab svg { width: 24px; height: 24px; stroke: #ffffff; stroke-width: 2.5; fill: none; }
+
+        /* Auth Screen Specific Styles */
+        #view-auth {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 1rem;
+        }
+        .auth-card {
+            background: var(--md-surface);
+            border: 1px solid var(--md-border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem 1.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+        }
+
+        @media (min-width: 840px) {
+            body { flex-direction: row-reverse; }
+            header { width: 100%; position: absolute; top: 0; left: 0; }
+            nav {
+                top: 0; bottom: 0; left: 0; right: auto;
+                width: 260px; flex-direction: column;
+                justify-content: flex-start; gap: 0.5rem;
+                padding: 6rem 1rem 1rem 1rem;
+                background: #ffffff;
+                border-right: 1px solid var(--md-border); border-top: none;
+            }
+            .nav-tab { width: 100%; flex-direction: row; padding: 0.6rem 1rem; gap: 1rem; border-radius: var(--radius-lg); }
+            .nav-tab .icon-pill { padding: 0; background: none !important; }
+            .nav-tab.active { background-color: rgba(98, 0, 238, 0.05); }
+            .app-container { margin-left: 260px; padding-top: 6rem; }
+            .fab { bottom: 2rem; right: 2rem; }
+            .bottom-sheet { align-items: center; justify-content: center; }
+            .sheet-content { max-width: 460px; border-radius: var(--radius-md); }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="global-fab" class="fab" style="display:none;" onclick="openBottomSheet('inventory-sheet')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+
+    <header>
+        <div class="app-brand"><h1 id="header-shop-name">Lapify Hub</h1></div>
+        <div id="cloud-status-badge" class="pill pill-danger" style="border: 1px solid var(--md-border);">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.5;"><circle cx="12" cy="8" r="7"></circle><path d="M4 21v-1a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v1"></path></svg>
+            <span id="badge-status-text">Logged Out</span>
+        </div>
+    </header>
+
+    <div class="app-container">
+        
+        <div id="universal-banner" class="canvas-card" style="display: none;">
+            <canvas id="explainer-canvas" width="400" height="70"></canvas>
+            <div class="explainer-banner">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span id="explainer-text">Ready.</span>
+            </div>
+        </div>
+
+        <section id="universal-kpi" class="kpi-grid" style="display: none;">
+            <div class="kpi-card" id="card-kpi-rev"><span class="kpi-label">Net Gain</span><span class="kpi-value" id="kpi-revenue">Rs.0</span></div>
+            <div class="kpi-card" id="card-kpi-stk"><span class="kpi-label">Stock Value</span><span class="kpi-value" id="kpi-stock">Rs.0</span></div>
+            <div class="kpi-card" id="card-kpi-ord"><span class="kpi-label">Break-Even</span><span class="kpi-value" id="kpi-orders">Rs.0/day</span></div>
+        </section>
+
+        <div id="view-auth" class="view-panel active">
+            <div class="auth-card">
+                <h3 id="auth-title" style="font-family:'Google Sans'; font-size:1.4rem; margin-bottom:0.5rem;">Access Hub Terminal</h3>
+                <p id="auth-desc" style="font-size:0.85rem; color:var(--md-text-muted); margin-bottom:1.5rem;">Sign in or create a terminal profile to sync multi-device sales logs.</p>
+                
+                <form id="auth-form" onsubmit="handleAuthSubmission(event)">
+                    <div class="form-group">
+                        <label>Username Handle</label>
+                        <input type="text" id="auth-username" required placeholder="e.g. shopowner77" style="-webkit-user-select:text; user-select:text;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:1.5rem;">
+                        <label>Secure Key Password</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••" style="-webkit-user-select:text; user-select:text;">
+                    </div>
+                    <button type="submit" id="auth-submit-btn" class="btn btn-supabase">Sign In to Engine</button>
+                </form>
+                
+                <div style="text-align:center; margin-top:1.25rem;">
+                    <button id="auth-toggle-btn" class="btn btn-text" style="font-size:0.8rem;" onclick="toggleAuthMode()">Don't have a shop account? Sign Up</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="view-panel">
+            <div class="data-card" style="flex-direction: column; align-items: stretch; gap: 0.75rem; border-color: var(--color-primary); margin-bottom: 1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h4 style="font-family:'Google Sans'; font-weight:700; font-size:0.9rem;">Store Operating Expenses</h4>
+                    <span class="pill pill-warning" id="break-even-badge">Rs.0 / day</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.7rem;">Monthly Rent</label>
+                        <input type="number" id="cost-rent" value="0" oninput="calculateOperatingOverhead()">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.7rem;">Salaries/Bills</label>
+                        <input type="number" id="cost-salaries" value="0" oninput="calculateOperatingOverhead()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header-box"><h3 class="section-title">Stock Status Alerts</h3></div>
+            <div id="dash-alerts-list" class="data-list" style="margin-bottom: 1.25rem;"></div>
+
+            <div class="section-header-box"><h3 class="section-title">Recent Real-time Sales Ledger</h3></div>
+            <div id="dash-sales-list" class="data-list"></div>
+        </div>
+
+        <div id="view-inventory" class="view-panel">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+                <input type="text" id="inventory-search" placeholder="Filter stock items..." oninput="renderInventoryModule()">
+                <button id="filter-low-stock-btn" class="btn btn-outline" style="width: auto; padding: 0 1rem; white-space: nowrap; font-size:0.8rem;" onclick="toggleLowStockFilter()">All</button>
+            </div>
+            <div id="inventory-items-list" class="data-list"></div>
+        </div>
+
+        <div id="view-pos" class="view-panel">
+            <div class="form-group">
+                <label>Select Laptop Profile</label>
+                <select id="pos-selector" onchange="runInvoicePricingEngine()"></select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" id="pos-quantity" value="1" min="1" oninput="runInvoicePricingEngine()">
+            </div>
+
+            <div class="form-group" style="background:rgba(0, 229, 255, 0.04); padding:0.75rem; border-radius:var(--radius-sm); border:1px dashed var(--color-secondary);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                    <label style="color:var(--md-text-main); font-size:0.75rem;">Markdown Discount</label>
+                    <span id="discount-val" style="font-family:'Roboto Mono'; font-weight:700; color:var(--color-primary); font-size:0.8rem;">0%</span>
+                </div>
+                <input type="range" id="pos-discount" min="0" max="30" value="0" step="5" oninput="runInvoicePricingEngine()">
+            </div>
+            
+            <div class="checkout-summary-card">
+                <div class="summary-row"><span>Subtotal Base:</span><span id="invoice-subtotal" style="font-family:'Roboto Mono';">Rs.0</span></div>
+                <div class="summary-row"><span>GST Tax (18%):</span><span id="invoice-tax" style="font-family:'Roboto Mono';">Rs.0</span></div>
+                <div class="summary-row" style="border-top:1px dashed rgba(255,255,255,0.15); padding-top:0.3rem; color:var(--color-success);">
+                    <span>Estimated Net Margin:</span><span id="invoice-profit" style="font-family:'Roboto Mono'; font-weight:700;">Rs.0</span>
+                </div>
+                <div class="summary-row" style="font-weight:700; font-size:1.1rem; margin-top:0.3rem; border-top:1px dashed rgba(255,255,255,0.2); padding-top:0.5rem; color:var(--color-secondary);">
+                    <span>Customer Bill Total:</span><span id="invoice-total">Rs.0</span>
+                </div>
+            </div>
+            <button class="btn" style="margin-top:1.25rem;" onclick="commitTerminalTransaction()">
+                Process Order Settlement
+            </button>
+        </div>
+
+        <div id="view-settings" class="view-panel">
+            <div class="data-list">
+                <div class="data-card" style="flex-direction:column; align-items:stretch; gap:0.5rem;">
+                    <h4 style="font-family:'Google Sans'; font-size:0.9rem;">Store Settings</h4>
+                    <div class="form-group" style="margin:0;"><input type="text" id="input-shop-name" placeholder="Enter custom store title..."></div>
+                    <button class="btn" onclick="applyCorporateNameChange()">Save Shop Identity</button>
+                </div>
+
+                <div class="data-card" style="flex-direction:column; align-items:stretch; gap:0.6rem; border:1px solid var(--color-supabase);">
+                    <h4 style="font-family:'Google Sans'; font-size:0.9rem; color:var(--color-supabase);">Linked Cluster Credentials</h4>
+                    <p style="font-size:0.75rem; color:var(--md-text-muted);">Configure connection endpoints for multi-device network syncing capability.</p>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.7rem;">Supabase Project URL</label>
+                        <input type="text" id="sb-url" placeholder="https://your-project.supabase.co">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:0.7rem;">API Anon Key</label>
+                        <input type="password" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    </div>
+                    <button class="btn btn-supabase" onclick="saveSupabaseCredentials()">Update Cluster Configuration</button>
+                    <button class="btn btn-secondary" style="margin-top:0.5rem; color:var(--color-danger);" onclick="terminateSession()">Disconnect Account Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventory-sheet" class="bottom-sheet" onclick="closeBottomSheetOnBackdrop(event)">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <h3 style="font-family:'Google Sans'; font-weight:700; font-size:1.1rem;">Record Laptop Item</h3>
+                <button class="btn btn-text" onclick="closeBottomSheet('inventory-sheet')">Close</button>
+            </div>
+            <form onsubmit="saveInventoryAsset(event)">
+                <div class="form-group"><label>Brand</label><input type="text" id="form-brand" required placeholder="e.g. Apple"></div>
+                <div class="form-group"><label>Model Title</label><input type="text" id="form-model" required placeholder="e.g. MacBook Air M2"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                    <div class="form-group"><label>Cost (PKR)</label><input type="number" id="form-cost" required placeholder="Wholesale buy value"></div>
+                    <div class="form-group"><label>Retail (PKR)</label><input type="number" id="form-price" required placeholder="Selling price"></div>
+                </div>
+                <div class="form-group"><label>Units Available</label><input type="number" id="form-qty" required placeholder="Quantity count"></div>
+                <button type="submit" class="btn" style="margin-top:0.5rem;">Add to Active Stock</button>
+            </form>
+        </div>
+    </div>
+
+    <nav id="app-nav-dock" style="display: none;">
+        <button class="nav-tab active" data-target="dashboard" onclick="appNavigationRouter('dashboard', event)">
+            <div class="icon-pill">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            </div>
+            Desk
+        </button>
+        <button class="nav-tab" data-target="inventory" onclick="appNavigationRouter('inventory', event)">
+            <div class="icon-pill">
+                <svg viewBox="0 0 24 24"><path d="M21 8H3L4 4h16l1 4z"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/></svg>
+            </div>
+            Stock
+        </button>
+        <button class="nav-tab" data-target="pos" onclick="appNavigationRouter('pos', event)">
+            <div class="icon-pill">
+                <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            </div>
+            Counter
+        </button>
+        <button class="nav-tab" data-target="settings" onclick="appNavigationRouter('settings', event)">
+            <div class="icon-pill">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            Setup
+        </button>
+    </nav>
+
+    <script>
+        // Core Storage Arrays Wiped to Base State
+        let databaseMemory = [];
+        let salesLogs = [];
+        let totalNetProfit = 0;
+        let corporateShopName = "Lapify Hub";
+        let activeModule = 'auth';
+        let showOnlyLowStock = false;
+
+        // Security Session Parameters
+        let authenticatedUser = null;
+        let isSignUpMode = false;
+
+        // Cluster Endpoints
+        let supabaseUrl = localStorage.getItem('sb_url') || "";
+        let supabaseKey = localStorage.getItem('sb_key') || "";
+
+        const pkrCurrency = new Intl.NumberFormat('en-PK', {
+            style: 'currency', currency: 'PKR', minimumFractionDigits: 0
+        });
+
+        const canvas = document.getElementById('explainer-canvas');
+        const ctx = canvas.getContext('2d');
+        let canvasTimer = 0;
+
+        function appNavigationRouter(targetViewId, e) {
+            if(!authenticatedUser && targetViewId !== 'auth') return;
+            activeModule = targetViewId;
+            
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active-kpi'));
+            
+            document.getElementById(`view-${targetViewId}`).classList.add('active');
+            if(e) e.currentTarget.classList.add('active');
+            
+            if(targetViewId === 'dashboard') document.getElementById('card-kpi-ord').classList.add('active-kpi');
+            if(targetViewId === 'inventory') document.getElementById('card-kpi-stk').classList.add('active-kpi');
+            if(targetViewId === 'pos') document.getElementById('card-kpi-rev').classList.add('active-kpi');
+
+            document.getElementById('global-fab').style.display = (targetViewId === 'inventory') ? 'flex' : 'none';
+            globalLifecycleSync();
+        }
+
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('auth-title').innerText = isSignUpMode ? "Create Shop Account" : "Access Hub Terminal";
+            document.getElementById('auth-desc').innerText = isSignUpMode ? "Register a master handle to establish database bindings." : "Sign in or create a terminal profile to sync multi-device sales logs.";
+            document.getElementById('auth-submit-btn').innerText = isSignUpMode ? "Sign Up & Register" : "Sign In to Engine";
+            document.getElementById('auth-toggle-btn').innerText = isSignUpMode ? "Already verified? Sign In" : "Don't have a shop account? Sign Up";
+        }
+
+        async function makeSupabaseRequest(table, method = 'GET', body = null, queryParams = "") {
+            if(!supabaseUrl || !supabaseKey) {
+                alert("Please check your Setup tab settings to link your live Supabase database URL and Key first.");
+                return null;
+            }
+            const url = `${supabaseUrl}/rest/v1/${table}${queryParams}`;
+            const headers = {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': method === 'POST' ? 'return=representation' : ''
+            };
+            try {
+                const config = { method, headers };
+                if(body) config.body = JSON.stringify(body);
+                const res = await fetch(url, config);
+                if(!res.ok) throw new Error(`Database transaction fault Status: ${res.status}`);
+                return await res.json();
+            } catch(e) {
+                console.error("Cloud engine error: ", e);
+                return null;
+            }
+        }
+
+        async function handleAuthSubmission(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+
+            if(!supabaseUrl || !supabaseKey) {
+                alert("Supabase credentials missing on this device. Please assign project credentials in the code or form parameters.");
+                return;
+            }
+
+            if(isSignUpMode) {
+                // Ensure unique usernames
+                const checkUser = await makeSupabaseRequest('users', 'GET', null, `?username=eq.${username}`);
+                if(checkUser && checkUser.length > 0) {
+                    alert("This username handle is already registered to a device.");
+                    return;
+                }
+                const newUser = await makeSupabaseRequest('users', 'POST', { username, password });
+                if(newUser) {
+                    alert("Account registered successfully. Proceeding to login...");
+                    toggleAuthMode();
+                }
+            } else {
+                // Sign In verification loop
+                const verifiedUser = await makeSupabaseRequest('users', 'GET', null, `?username=eq.${username}&password=eq.${password}`);
+                if(verifiedUser && verifiedUser.length > 0) {
+                    authenticatedUser = username;
+                    localStorage.setItem('hub_session_user', username);
+                    
+                    // Reveal Core UI Elements upon authorization
+                    document.getElementById('universal-banner').style.display = 'block';
+                    document.getElementById('universal-kpi').style.display = 'grid';
+                    document.getElementById('app-nav-dock').style.display = 'flex';
+                    
+                    document.getElementById('cloud-status-badge').className = "pill pill-supabase";
+                    document.getElementById('badge-status-text').innerText = `${username} (Online)`;
+
+                    await pullCloudDataMatrix();
+                    appNavigationRouter('dashboard');
+                } else {
+                    alert("Invalid credential pairing. Username and password do not match.");
+                }
+            }
+        }
+
+        function terminateSession() {
+            localStorage.removeItem('hub_session_user');
+            authenticatedUser = null;
+            databaseMemory = [];
+            salesLogs = [];
+            totalNetProfit = 0;
+
+            document.getElementById('universal-banner').style.display = 'none';
+            document.getElementById('universal-kpi').style.display = 'none';
+            document.getElementById('app-nav-dock').style.display = 'none';
+            document.getElementById('cloud-status-badge').className = "pill pill-danger";
+            document.getElementById('badge-status-text').innerText = "Logged Out";
+
+            appNavigationRouter('auth');
+        }
+
+        async function pullCloudDataMatrix() {
+            document.getElementById('explainer-text').innerText = "Downloading ledger instances from remote stack...";
+            
+            const stockData = await makeSupabaseRequest('laptops', 'GET', null, '?select=*');
+            if(stockData) {
+                databaseMemory = stockData.map(d => ({
+                    id: d.id, brand: d.brand, model: d.model, cost: Number(d.cost), price: Number(d.price), qty: Number(d.qty)
+                }));
+            }
+
+            const historicalSales = await makeSupabaseRequest('sales_logs', 'GET', null, '?select=*');
+            if(historicalSales) {
+                salesLogs = historicalSales.map(s => ({
+                    itemSummary: s.item_summary, count: Number(s.count), profit: Number(s.profit), timestamp: s.timestamp
+                }));
+                totalNetProfit = salesLogs.reduce((sum, log) => sum + log.profit, 0);
+            }
+
+            globalLifecycleSync();
+        }
+
+        function calculateOperatingOverhead() {
+            const rent = parseFloat(document.getElementById('cost-rent').value) || 0;
+            const salaries = parseFloat(document.getElementById('cost-salaries').value) || 0;
+            const dailyBreakEven = (rent + salaries) / 30;
+            
+            document.getElementById('break-even-badge').innerText = `${pkrCurrency.format(dailyBreakEven)} / day`;
+            document.getElementById('kpi-orders').innerText = `${pkrCurrency.format(dailyBreakEven)}/d`;
+        }
+
+        function globalLifecycleSync() {
+            if(!authenticatedUser) return;
+            const totalAssetEquity = databaseMemory.reduce((sum, item) => sum + (item.cost * item.qty), 0);
+            
+            document.getElementById('kpi-revenue').innerText = pkrCurrency.format(totalNetProfit);
+            document.getElementById('kpi-stock').innerText = pkrCurrency.format(totalAssetEquity);
+            document.getElementById('header-shop-name').innerText = corporateShopName;
+
+            renderDashboardAlerts();
+            renderRecentSales();
+            renderInventoryModule();
+            populatePOSDropdown();
+            runInvoicePricingEngine();
+            
+            const messages = {
+                dashboard: "Desk Panel: Live operational cost splits and ledger updates.",
+                inventory: "Stock Ledger: Real-time warehouse entries.",
+                pos: "Counter Terminal: Register transactions and markdown variables.",
+                settings: "Setup Workspace: Manage cluster network settings."
+            };
+            document.getElementById('explainer-text').innerText = messages[activeModule] || "";
+        }
+
+        function dynamicCanvasRenderLoop() {
+            canvasTimer += 0.04;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 2; i++) {
+                ctx.beginPath();
+                ctx.strokeStyle = i === 0 ? 'rgba(98,0,238,0.15)' : 'rgba(62,207,142,0.15)';
+                for (let x = 0; x < canvas.width; x += 10) {
+                    let y = 35 + Math.sin(x * 0.03 + canvasTimer + i) * 10;
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            requestAnimationFrame(dynamicCanvasRenderLoop);
+        }
+
+        function renderDashboardAlerts() {
+            const container = document.getElementById('dash-alerts-list');
+            container.innerHTML = '';
+            let lowStockItems = databaseMemory.filter(item => item.qty < 3);
+
+            if(lowStockItems.length === 0) {
+                container.innerHTML = `<div class="data-card" style="justify-content:center; color:var(--md-text-muted); font-size:0.8rem;">All current stock levels healthy.</div>`;
+                return;
+            }
+
+            lowStockItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                let badge = item.qty === 0 ? '<span class="pill pill-danger">Sold Out</span>' : '<span class="pill pill-warning">Low</span>';
+                card.innerHTML = `
+                    <div class="card-details">
+                        <h4>${item.brand} ${item.model}</h4>
+                        <p>${item.qty} units left in stock</p>
+                    </div>
+                    <div>${badge}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderRecentSales() {
+            const container = document.getElementById('dash-sales-list');
+            container.innerHTML = '';
+            if(salesLogs.length === 0) {
+                container.innerHTML = `<div class="data-card" style="justify-content:center; color:var(--md-text-muted); font-size:0.8rem;">No sales registered yet.</div>`;
+                return;
+            }
+            [...salesLogs].reverse().forEach(log => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="card-details">
+                        <h4>${log.itemSummary} (x${log.count})</h4>
+                        <p>${log.timestamp}</p>
+                    </div>
+                    <div style="font-family:'Roboto Mono'; font-weight:700; color:var(--color-success);">+${pkrCurrency.format(log.profit)}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleLowStockFilter() {
+            showOnlyLowStock = !showOnlyLowStock;
+            const btn = document.getElementById('filter-low-stock-btn');
+            btn.className = showOnlyLowStock ? "btn" : "btn btn-outline";
+            btn.innerText = showOnlyLowStock ? "Shortages" : "All";
+            renderInventoryModule();
+        }
+
+        function renderInventoryModule() {
+            const container = document.getElementById('inventory-items-list');
+            const searchStr = document.getElementById('inventory-search').value.toLowerCase();
+            container.innerHTML = '';
+
+            if(databaseMemory.length === 0) {
+                container.innerHTML = `<div class="data-card" style="justify-content:center; color:var(--md-text-muted); font-size:0.8rem; padding:2rem 0; text-align:center;">Inventory is empty.<br>Tap the (+) button to record laptops.</div>`;
+                return;
+            }
+
+            databaseMemory.forEach(item => {
+                if ((item.brand.toLowerCase().includes(searchStr) || item.model.toLowerCase().includes(searchStr)) && (!showOnlyLowStock || item.qty < 3)) {
+                    const card = document.createElement('div');
+                    card.className = 'data-card';
+                    card.innerHTML = `
+                        <div class="card-details">
+                            <h4 style="font-weight:700;">${item.brand} <span style="font-weight:400; color:var(--md-text-muted);">${item.model}</span></h4>
+                            <p>Cost: ${pkrCurrency.format(item.cost)} • Retail: ${pkrCurrency.format(item.price)}</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-weight:700; color:${item.qty === 0 ? 'var(--color-danger)':'var(--color-primary)'};">${item.qty} Pcs</span><br>
+                            <span style="font-size:0.7rem; font-family:'Roboto Mono'; color:var(--md-text-muted);">${item.id}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
+
+        function populatePOSDropdown() {
+            const selector = document.getElementById('pos-selector');
+            selector.innerHTML = '';
+            if(databaseMemory.length === 0) {
+                selector.appendChild(new Option("No laptops registered in stock", ""));
+                return;
+            }
+            databaseMemory.forEach((item, idx) => {
+                let op = new Option(`${item.brand} ${item.model} (${item.qty} available)`, idx);
+                if(item.qty <= 0) op.disabled = true;
+                selector.appendChild(op);
+            });
+        }
+
+        let currentCalculationMetrics = { grossBill: 0, netProfitYield: 0, targetIndex: 0, saleQty: 0 };
+        
+        function runInvoicePricingEngine() {
+            const selector = document.getElementById('pos-selector');
+            if(!selector.value || databaseMemory.length === 0) {
+                document.getElementById('invoice-subtotal').innerText = 'Rs.0';
+                document.getElementById('invoice-tax').innerText = 'Rs.0';
+                document.getElementById('invoice-profit').innerText = 'Rs.0';
+                document.getElementById('invoice-total').innerText = 'Rs.0';
+                return;
+            }
+            
+            const item = databaseMemory[parseInt(selector.value)];
+            const quantity = parseInt(document.getElementById('pos-quantity').value) || 1;
+            const markdownPercent = parseInt(document.getElementById('pos-discount').value) || 0;
+            
+            document.getElementById('discount-val').innerText = `${markdownPercent}%`;
+
+            const rawBaseRetail = item.price * quantity;
+            const discountValue = rawBaseRetail * (markdownPercent / 100);
+            const discountedRetailBase = rawBaseRetail - discountValue;
+            
+            const salesTaxAmount = discountedRetailBase * 0.18;
+            const finalCustomerBill = discountedRetailBase + salesTaxAmount;
+            
+            const totalWholesaleAssetCost = item.cost * quantity;
+            const businessNetProfit = discountedRetailBase - totalWholesaleAssetCost;
+
+            document.getElementById('invoice-subtotal').innerText = pkrCurrency.format(discountedRetailBase);
+            document.getElementById('invoice-tax').innerText = pkrCurrency.format(salesTaxAmount);
+            document.getElementById('invoice-profit').innerText = pkrCurrency.format(businessNetProfit);
+            document.getElementById('invoice-total').innerText = pkrCurrency.format(finalCustomerBill);
+
+            currentCalculationMetrics = {
+                grossBill: finalCustomerBill,
+                netProfitYield: businessNetProfit,
+                targetIndex: parseInt(selector.value),
+                saleQty: quantity
+            };
+        }
+
+        async function commitTerminalTransaction() {
+            const selector = document.getElementById('pos-selector');
+            if(!selector.value || databaseMemory.length === 0) return;
+
+            const targetAsset = databaseMemory[currentCalculationMetrics.targetIndex];
+            if(currentCalculationMetrics.saleQty > targetAsset.qty) {
+                alert("Insufficient stock available.");
+                return;
+            }
+
+            targetAsset.qty -= currentCalculationMetrics.saleQty;
+            totalNetProfit += currentCalculationMetrics.netProfitYield;
+
+            const logEntry = {
+                item_summary: `${targetAsset.brand} ${targetAsset.model}`,
+                count: currentCalculationMetrics.saleQty,
+                profit: currentCalculationMetrics.netProfitYield,
+                timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+
+            // Local cache mutation fallback optimization
+            salesLogs.push({
+                itemSummary: logEntry.item_summary, count: logEntry.count, profit: logEntry.profit, timestamp: logEntry.timestamp
+            });
+
+            // Remote Cluster Push Sync
+            await makeSupabaseRequest('laptops', 'PATCH', { qty: targetAsset.qty }, `?id=eq.${targetAsset.id}`);
+            await makeSupabaseRequest('sales_logs', 'POST', logEntry);
+
+            document.getElementById('pos-discount').value = 0;
+            document.getElementById('pos-quantity').value = 1;
+            globalLifecycleSync();
+            alert("Sale processed and replicated across cloud network.");
+        }
+
+        function openBottomSheet(id) { document.getElementById(id).classList.add('open'); }
+        function closeBottomSheet(id) { document.getElementById(id).classList.remove('open'); }
+        function closeBottomSheetOnBackdrop(e) { if(e.target.classList.contains('bottom-sheet')) e.target.classList.remove('open'); }
+
+        async function saveInventoryAsset(event) {
+            event.preventDefault();
+            const newLaptop = {
+                id: `LAP-${Math.floor(1000 + Math.random()*9000)}`,
+                brand: document.getElementById('form-brand').value.trim(),
+                model: document.getElementById('form-model').value.trim(),
+                cost: parseFloat(document.getElementById('form-cost').value),
+                price: parseFloat(document.getElementById('form-price').value),
+                qty: parseInt(document.getElementById('form-qty').value)
+            };
+
+            databaseMemory.push(newLaptop);
+            await makeSupabaseRequest('laptops', 'POST', newLaptop);
+
+            closeBottomSheet('inventory-sheet');
+            event.target.reset();
+            globalLifecycleSync();
+        }
+
+        function saveSupabaseCredentials() {
+            supabaseUrl = document.getElementById('sb-url').value.trim();
+            supabaseKey = document.getElementById('sb-key').value.trim();
+            localStorage.setItem('sb_url', supabaseUrl);
+            localStorage.setItem('sb_key', supabaseKey);
+            alert("Cluster updated successfully.");
+        }
+
+        function applyCorporateNameChange() {
+            const name = document.getElementById('input-shop-name').value.trim();
+            if(name) { corporateShopName = name; globalLifecycleSync(); alert("Identity saved."); }
+        }
+
+        window.onload = () => { 
+            document.getElementById('sb-url').value = supabaseUrl;
+            document.getElementById('sb-key').value = supabaseKey;
+            dynamicCanvasRenderLoop();
+            
+            // Check session persistence
+            const cachedUser = localStorage.getItem('hub_session_user');
+            if(cachedUser && supabaseUrl && supabaseKey) {
+                authenticatedUser = cachedUser;
+                document.getElementById('universal-banner').style.display = 'block';
+                document.getElementById('universal-kpi').style.display = 'grid';
+                document.getElementById('app-nav-dock').style.display = 'flex';
+                document.getElementById('cloud-status-badge').className = "pill pill-supabase";
+                document.getElementById('badge-status-text').innerText = `${cachedUser} (Online)`;
+                pullCloudDataMatrix();
+                appNavigationRouter('dashboard');
+            }
+        };
+    </script>
+</body>
+</html>
